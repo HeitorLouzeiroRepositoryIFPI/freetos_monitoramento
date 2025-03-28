@@ -1,12 +1,5 @@
 # FreeRTOS - Sistema de Monitoramento com Raspberry Pi Pico
 
-<!-- PROJECT SHIELDS -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
-
 <!-- PROJECT LOGO -->
 <div align="center">
   <h3 align="center">Sistema de Monitoramento FreeRTOS para Raspberry Pi Pico</h3>
