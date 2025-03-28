@@ -4,79 +4,79 @@
 #include <stdio.h>
 #include "semphr.h"
 
-const uint led_blue = 12;
-const uint led_red = 13;
+const uint led_azul = 12;
+const uint led_vermelho = 13;
 
-const uint button_pin = 5;
+const uint pino_botao = 5;
 
-SemaphoreHandle_t semaforoBotao; // semáforo para acionar tarefa 2
-SemaphoreHandle_t semaforoLed; // semáforo para acionar tarefa 3
+SemaphoreHandle_t semaforoBotaoPressionado; // semáforo para acionar tarefa de processamento do botão
+SemaphoreHandle_t semaforoAcionarLed; // semáforo para acionar tarefa de controle do LED
 
 void tarefaLeituraBotao(void *parametro) {
-    int estadoBotaoAnterior = 1;
+    int estadoAnteriorBotao = 1;
 
     for (;;) {
-        int estadoBotaoAtual = gpio_get(button_pin);
+        int estadoAtualBotao = gpio_get(pino_botao);
         
-        printf("estado botao: %d\n",estadoBotaoAtual);
+        printf("Estado do botao: %d\n", estadoAtualBotao);
 
-        if (estadoBotaoAtual == 0 && estadoBotaoAnterior == 1) { 
-            xSemaphoreGive(semaforoBotao);
+        if (estadoAtualBotao == 0 && estadoAnteriorBotao == 1) { 
+            xSemaphoreGive(semaforoBotaoPressionado);
         }
 
-        estadoBotaoAnterior = estadoBotaoAtual;
+        estadoAnteriorBotao = estadoAtualBotao;
         vTaskDelay(pdMS_TO_TICKS(50)); 
     }
 }
 
 void tarefaProcessamentoBotao(void *parametro) {
     for (;;) {
-        if (xSemaphoreTake(semaforoBotao, portMAX_DELAY)) {
-            xSemaphoreGive(semaforoLed);
+        if (xSemaphoreTake(semaforoBotaoPressionado, portMAX_DELAY)) {
+            xSemaphoreGive(semaforoAcionarLed);
         }
     }
 }
 
 void tarefaControleLed(void *parametro) {
     for (;;) {
-        if (xSemaphoreTake(semaforoLed, portMAX_DELAY)) {
-            gpio_put(led_blue, 1);
-            gpio_put(led_red,1);
+        if (xSemaphoreTake(semaforoAcionarLed, portMAX_DELAY)) {
+            gpio_put(led_azul, 1);
+            gpio_put(led_vermelho, 1);
             vTaskDelay(pdMS_TO_TICKS(1000));
-            gpio_put(led_blue, 0);
-            gpio_put(led_red , 0);
+            gpio_put(led_azul, 0);
+            gpio_put(led_vermelho, 0);
         }
     }
 }
 
-void setupLedsAndButton() {
-    gpio_init(led_blue);
-    gpio_set_dir(led_blue, GPIO_OUT);
-    gpio_put(led_blue, 0);
+void configurarLedsEBotao() {
+    gpio_init(led_azul);
+    gpio_set_dir(led_azul, GPIO_OUT);
+    gpio_put(led_azul, 0);
     
-    gpio_init(led_red);
-    gpio_set_dir(led_red, GPIO_OUT);
-    gpio_put(led_red, 0);
+    gpio_init(led_vermelho);
+    gpio_set_dir(led_vermelho, GPIO_OUT);
+    gpio_put(led_vermelho, 0);
 
-    gpio_init(button_pin);
-    gpio_set_dir(button_pin, GPIO_IN);
-    gpio_pull_up(button_pin);
+    gpio_init(pino_botao);
+    gpio_set_dir(pino_botao, GPIO_IN);
+    gpio_pull_up(pino_botao);
 }
 
 void main() {
     stdio_init_all();
-    setupLedsAndButton();
+    configurarLedsEBotao();
 
-    semaforoBotao = xSemaphoreCreateBinary();
-    semaforoLed = xSemaphoreCreateBinary();
+    semaforoBotaoPressionado = xSemaphoreCreateBinary();
+    semaforoAcionarLed = xSemaphoreCreateBinary();
 
-    if (semaforoBotao == NULL || semaforoLed == NULL) {
-        printf("Erro ao criar seaforos!\n");
+    if (semaforoBotaoPressionado == NULL || semaforoAcionarLed == NULL) {
+        printf("Erro ao criar semaforos!\n");
         while (1);
     }
 
-    xTaskCreate(tarefaLeituraBotao, "Leitura Botão", 1024, NULL, 1, NULL);
-    xTaskCreate(tarefaProcessamentoBotao, "Processamento Botão", 1024, NULL, 1, NULL);
+    xTaskCreate(tarefaLeituraBotao, "Leitura Botao", 1024, NULL, 1, NULL);
+    xTaskCreate(tarefaProcessamentoBotao, "Processamento Botao", 1024, NULL, 1, NULL);
     xTaskCreate(tarefaControleLed, "Controle LED", 1024, NULL, 1, NULL);
 
     vTaskStartScheduler();
